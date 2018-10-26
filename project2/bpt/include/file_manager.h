@@ -6,13 +6,6 @@
 #define HEADERPAGENUM 0
 #define ROOTPAGENUM 1
 
-/*
-typedef uint64_t pagenum_t; 
-struct page_t { 
-// in-memory page structure 
-};
-*/
-
 int db_fd;
 header_page_t * header_page;
 page_t * root_page;
@@ -21,7 +14,6 @@ page_t * root_page;
 int open_db(char* pathname);
 
 // Allocate an on-disk page from the free page list 
-//pagenum_t file_alloc_page();
 pagenum_t file_alloc_page();
 
 // Free an on-disk page to the free page list 

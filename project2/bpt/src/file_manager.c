@@ -58,11 +58,11 @@ pagenum_t file_alloc_page(){
 // Free an on-disk page to the free page list 
 void file_free_page(pagenum_t pagenum){
 	page_t* page = (page_t*)calloc(1, PAGESIZE);
-	file_read_page(pagenum, page);
 	memset(page, 0, PAGESIZE);
 	page->pointer_num = header_page->free_page_offset_num;
+	file_write_page(pagenum, page);
 	header_page->free_page_offset_num = pagenum;
-	file_write_page(HEADERPAGENUM, header_page);
+	file_write_page(HEADERPAGENUM, (page_t*)header_page);
 	free(page);
 }
 

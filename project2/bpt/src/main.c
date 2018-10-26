@@ -1,20 +1,61 @@
+/*
+// test code
 #include "bpt.h"
+#include <time.h>
+#include <ctype.h>
+#include <inttypes.h>
+#include <stdbool.h>
+
+int main(int argc, char ** argv) {
+
+    int64_t input;
+    char instruction;
+	char value[120];
+    open_db("test.db");
+    while(scanf("%c", &instruction) != EOF){
+        switch(instruction){
+            case 'i':
+                scanf("%"PRId64 "%s", &input, value);
+                insert(input, value);
+                break;
+            case 'f':
+                scanf("%" PRIu64, &input);
+                char * buf = find(input);
+                if (buf != NULL) {
+                    printf("Key: ""%"PRId64 ", Value: %s\n", input, buf);
+                } else
+                    printf("Not Exists\n");
+
+                fflush(stdout);
+                break;
+            case 'd':
+                scanf("%" PRIu64, &input);
+                delete(input);
+                break;
+            case 'q':
+                while(getchar() != (int)'\n');
+                return EXIT_SUCCESS;
+                break;
+        }
+        while (getchar() != (int)'\n');
+    }
+    printf("\n");
+    return EXIT_SUCCESS;
+}
+*/
+
+#include "bpt.h"
+#include <inttypes.h>
 
 int main( int argc, char ** argv ) {
 
-    const char * input_file = "default_input";
-	char value[120];
+    char * input_file = "default.db";
+    char value[120];
     FILE * fp;
-    //node * root;
-    //int range2;
     int64_t input;
     char instruction;
     char license_part;
     int result;
-
-    //root = NULL;
-    //root_page = NULL;
-    //verbose_output = false;
 
     if (argc > 1) {
         order = atoi(argv[1]);
@@ -31,59 +72,46 @@ int main( int argc, char ** argv ) {
 
     if (argc > 2) {
         input_file = argv[2];
-        /*fp = fopen(input_file, "r");
-        if (fp == NULL) {
-            perror("Failure  open input file.");
-            exit(EXIT_FAILURE);
-        }
-        while (!feof(fp)) {
-            fscanf(fp, "%d\n", &input);
-            root = insert(root, input, input);
-        }
-        fclose(fp);*/
-        //print_tree(root);
         open_db(input_file);
-        //print_tree();
         printf("\nOpen or Create file Successful!\n");
     }
-	else{
-		open_db(input_file);
-		printf("\nOpen or Create file Successful!\n");
-	}
+    else{
+        open_db(input_file);
+        printf("\nOpen or Create file Successful!\n");
+    }
 
     printf("> ");
     while (scanf("%c", &instruction) != EOF) {
         switch (instruction) {
         case 'd':
-            scanf("%lld", &input);
-            //root = delete(root, input);
+            scanf("%" PRIu64, &input);
             result = delete(input);
             if(result){
                 printf("delete error!\n");
-                return EXIT_FAILURE;
+                break;
             }
-            //print_tree(root);
             print_tree();
             break;
         case 'i':
-            scanf("%lld %s", &input, value);
-            //root = insert(root, input, input);
+            scanf("%"PRId64 "%s", &input, value);
             result = insert(input, value);
             if(result){
                 printf("same key!\n");
                 break;
             }
-            //print_tree(root);
             print_tree();
             break;
         case 'f':
+			scanf("%" PRIu64, &input);
+			char * buf = find(input);
+			if(buf==NULL) printf("Not Found!\n");
+			else printf("Key : ""%"PRId64 " value : %s\n",input, buf);
+			break;
         case 'p':
-            scanf("%lld", &input);
-            //find_and_print(root, input, instruction == 'p');
+            scanf("%" PRIu64, &input);
             find_and_print(input, instruction == 'p');
             break;
         case 'l':
-            //print_leaves(root);
             print_leaves();
             break;
         case 'q':
@@ -91,7 +119,6 @@ int main( int argc, char ** argv ) {
             return EXIT_SUCCESS;
             break;
         case 't':
-            //print_tree(root);
             print_tree();
             break;
         default:
