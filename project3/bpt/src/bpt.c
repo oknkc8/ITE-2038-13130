@@ -285,6 +285,7 @@ int path_to_root( int table_id, pagenum_t child_pagenum ) {
 void print_free_page_list(int table_id){
     buffer_t * header_buf = buf_get_page(table_id, HEADERPAGENUM);
 	if(header_buf->header_page.free_page_offset_num == 0){
+        buf_put_page(header_buf);
 		printf("\nEmpty Free Page List.\n");
 		return;
 	}
@@ -304,7 +305,8 @@ void print_free_page_list(int table_id){
 		printf(" -> %"PRId64, fpl_pagenum);
 	}
     buf_put_page(fpl);
-	printf(" ]\n");
+    buf_put_page(header_buf);
+	printf(" ]\n\n");
 }
 
 
@@ -319,10 +321,13 @@ void print_free_page_list(int table_id){
  */
 void print_tree( int table_id ) {
     //page_t * n = (page_t*)calloc(1, PAGESIZE);
+    //print_buf();
     int i = 0;
     int rank = 0;
     int new_rank = 0;
     buffer_t * header_buf = buf_get_page(table_id, HEADERPAGENUM), * n;
+    buf_put_page(header_buf);
+    //print_buf();
 
     //if(root_page == NULL) {
     if(header_buf->header_page.root_page_offset_num == 0){
@@ -331,6 +336,7 @@ void print_tree( int table_id ) {
         return;
     }
 
+    //print_buf();
 	queue = NULL;
 	printf("B+ Tree\n");
     enqueue(ROOTPAGENUM);
@@ -367,8 +373,9 @@ void print_tree( int table_id ) {
         printf("| ");
     }
     printf("\n");
-
+   // print_buf();
 	print_free_page_list(table_id);
+    //print_buf();
 }
 
 
@@ -401,11 +408,11 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
     //printf("\nfind_leaf\n");
     int i = 0;
 
-    print_buf();
+    //print_buf();
     buffer_t * header_buf = buf_get_page(table_id, HEADERPAGENUM);
     //printf("check1\n");
     //printf("%d\n", header_buf->header_page.root_page_offset_num);
-    print_buf();
+    //print_buf();
     if(header_buf->header_page.root_page_offset_num == 0){
         //printf("check4\n");
         if (verbose) 
@@ -472,22 +479,26 @@ char * find( int table_id, int64_t key ) {
 
     if (c == NULL) return NULL;
 
+    //printf("dfdfd\n");
+    //print_buf();
+
     for (i = 0; i < c->page.num_keys; i++){
 		//if (c->keys[i] == key) break;
 		//printf("%" PRId64 " ",c->records[i].key);
-        printf("%d ",c->page.records[i].key);
+        //printf("%d ",c->page.records[i].key);
         if(c->page.records[i].key == key) break;
 	}
-    printf("\n");
+    //printf("\n");
 
     if (i == c->page.num_keys) {
-        buf_put_page(c);
+        //printf("not found\n");
+        //buf_put_page(c);
         return NULL;
     }
     else {
         char * ret = (char*)malloc(sizeof(char)*120);
         strcpy(ret, c->page.records[i].value);
-        buf_put_page(c);
+        //buf_put_page(c);
         return ret;
     }
 }
@@ -600,11 +611,15 @@ void insert_into_leaf( buffer_t * leaf, record_t * record ) {
  * in half.
  */
 void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagenum_t pagenum ) {
+    //printf("insert leaf after\n");
+    //print_buf();
     buffer_t * header_buf = buf_get_page(leaf->table_id, HEADERPAGENUM);
     buf_put_page(header_buf);
     buffer_t * new_leaf;
     pagenum_t new_leaf_pagenum = header_buf->header_page.num_pages;
     leaf = buf_get_page(leaf->table_id, leaf->pagenum);
+    //printf("dfdsf\n");
+    //print_buf();
 
     /* Check the free_pagenum from header_page
      * get the first free page on free page list
@@ -623,11 +638,19 @@ void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagen
 		new_leaf->page.is_leaf = 1;
 
         header_buf->is_dirty = 1;
+        new_leaf->is_dirty = 1;
         buf_put_page(header_buf);
+        buf_put_page(new_leaf);
     }
     else{
+        //printf("new leaf\n");
 		new_leaf = make_leaf(leaf->table_id);
 	}
+
+    //printf("dfasewfwe\n");
+    //print_buf();
+
+    new_leaf = buf_get_page(new_leaf->table_id, new_leaf->pagenum);
 
     page_t * temp_page = (page_t*)calloc(1, PAGESIZE);
     int insertion_index = 0, split, i, j;
@@ -681,9 +704,15 @@ void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagen
     //file_write_page(new_leaf_pagenum, new_leaf);
     leaf->is_dirty = 1;
     new_leaf->is_dirty = 1;
+    //printf("before leaf put\n");
+    //print_buf();
     buf_put_page(leaf);
+    //printf("before new leaf put\n");
+    //print_buf();
     buf_put_page(new_leaf);
 
+    //printf("123123123\n");
+    //print_buf();
     insert_into_parent(leaf, &pagenum, new_key, new_leaf, &new_leaf_pagenum);
 
     return;
@@ -748,12 +777,15 @@ void insert_into_node_after_splitting( buffer_t * old_page, pagenum_t * old_page
 		new_page->page.num_keys = 0;
 
         header_buf->is_dirty = 1;
+        new_page->is_dirty = 1;
         buf_put_page(header_buf);
+        buf_put_page(new_page);
     }
     else {
         new_page = make_node(old_page->table_id);
     }
 
+    new_page = buf_get_page(new_page->table_id, new_page->pagenum);
     page_t * temp_page = (page_t*)calloc(1,PAGESIZE);
 
     temp_page->pointer_num = old_page->page.pointer_num;
@@ -934,12 +966,15 @@ void insert_into_new_root(buffer_t * left, pagenum_t * left_pagenum, int64_t key
 		new_root->page.is_leaf = 0;
 
         header_buf->is_dirty = 1;
+        new_root->is_dirty = 1;
         buf_put_page(header_buf);
-
+        buf_put_page(new_root);
     }
     else{
 		new_root = make_node(left->table_id);
 	}
+
+    new_root = buf_get_page(new_root->table_id, new_root->pagenum);
 
     new_root->page.pointer_num = new_root_pagenum;
     new_root->page.entries[0].key = key;
@@ -989,11 +1024,15 @@ void start_new_tree( record_t * record, int table_id) {
         root_buf->page.is_leaf = 1;
 
         header_buf->is_dirty = 1;
+        root_buf->is_dirty = 1;
         buf_put_page(header_buf);
+        buf_put_page(root_buf);
 	}
 	else{
 	    root_buf = make_leaf(table_id);
 	}
+
+    root_buf = buf_get_page(root_buf->table_id, root_buf->pagenum);
 
     root_buf->page.parent_page_offset_num = 0;
     root_buf->page.records[0].key = record->key;
@@ -1019,9 +1058,9 @@ int insert ( int table_id, int64_t key, char * value ) {
     /* The current implementation ignores
      * duplicates.
      */
-    print_buf();
+    //print_buf();
 	char * find_ret = find(table_id, key);
-    print_buf();
+    //print_buf();
 
 	if(find_ret != NULL)
         return 1;   //Already, tree has the record
@@ -1188,7 +1227,7 @@ void remove_entry_from_node( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
 
 
 void adjust_root(int table_id) {
-    printf("\nadjust root\n");
+    //printf("\nadjust root\n");
 
     /* Case: nonempty root.
      * Key and pointer have already been deleted,
@@ -1202,7 +1241,7 @@ void adjust_root(int table_id) {
     /* Case: empty root. 
      */
 
-    print_buf();
+    //print_buf();
     if(!root_buf->page.is_leaf) {
         //printf("root not leaf\n");
         //page_t * new_root_page = (page_t*)calloc(1, PAGESIZE);
@@ -1220,12 +1259,12 @@ void adjust_root(int table_id) {
 
 		//file_write_page(ROOTPAGENUM, new_root_page);
         new_root_buf->is_dirty = 1;
-        print_buf();
+        //print_buf();
         buf_put_page(new_root_buf);
 		//file_read_page(ROOTPAGENUM, root_page);
         root_buf = buf_get_page(table_id, ROOTPAGENUM);
 
-        print_buf();
+        //print_buf();
 
         //printf("root is leaf %d\n", root_buf->page.is_leaf);
 
@@ -1264,7 +1303,7 @@ void adjust_root(int table_id) {
     // then the whole tree is empty.
 
     else{
-        printf("root leaf\n");
+        //printf("root leaf\n");
 		//file_free_page(ROOTPAGENUM);
         buf_put_page(root_buf);
         buf_free_page(table_id, ROOTPAGENUM);
@@ -1285,7 +1324,7 @@ void adjust_root(int table_id) {
  * without exceeding the maximum.
  */
 void coalesce_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor, pagenum_t neighbor_pagenum, buffer_t * parent, pagenum_t parent_pagenum, bool is_most_left, int parent_entries_index) {
-
+    //printf("merge node\n");
     int i, j, neighbor_insertion_index;
 	buffer_t * tmp;
     pagenum_t tmp_pagenum;
@@ -1511,7 +1550,7 @@ void redistribute_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor,
  * changes to preserve the B+ tree properties.
  */
 void delete_entry( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
-    printf("\ndelete entry\n");
+    //printf("\ndelete entry\n");
     int min_keys;
     buffer_t * neighbor,  * parent;
     pagenum_t neighbor_pagenum, parent_pagenum;
@@ -1589,7 +1628,7 @@ void delete_entry( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
 /* Master deletion function.
  */
 int delete(int table_id, int64_t key) {
-    printf("\ndelete\n");
+    //printf("\ndelete\n");
     buffer_t * key_leaf_page;
     char * key_record_value;
     pagenum_t key_leaf_page_pagenum;
@@ -1597,7 +1636,7 @@ int delete(int table_id, int64_t key) {
     key_record_value = find(table_id, key);
     key_leaf_page = find_leaf(table_id, key, &key_leaf_page_pagenum);
 
-    printf("%s", key_record_value);
+    //printf("%s", key_record_value);
     if (key_record_value != NULL && key_leaf_page != NULL) {
         delete_entry(key_leaf_page, key_leaf_page_pagenum, key);
         return 0;

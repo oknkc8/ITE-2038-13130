@@ -92,7 +92,6 @@ int main( int argc, char ** argv ) {
         printf("\nOpen or Create file Successful!\n");
     }
 
-    printf("%d\n", table_id);
     printf("> ");
     while (scanf("%c", &instruction) != EOF) {
         switch (instruction) {
@@ -104,6 +103,7 @@ int main( int argc, char ** argv ) {
                 break;
             }
             print_tree(table_id);
+            print_buf();
             break;
         case 'i':
             scanf("%"PRId64 "%s", &input, value);
@@ -113,6 +113,7 @@ int main( int argc, char ** argv ) {
                 break;
             }
             print_tree(table_id);
+            print_buf();
             break;
         case 'f':
 			scanf("%" PRIu64, &input);
@@ -134,6 +135,7 @@ int main( int argc, char ** argv ) {
             break;
         case 't':
             print_tree(table_id);
+            print_buf();
             break;
         default:
             usage_2();

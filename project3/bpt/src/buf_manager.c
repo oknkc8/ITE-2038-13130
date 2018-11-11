@@ -129,7 +129,6 @@ buffer_t * buf_get_page(int table_id, pagenum_t pagenum){
 		//printf("check4\n");
 		int new_buf_idx = buf_remain->buf_idx;
 		buf[new_buf_idx] = *new_buf;
-		buf[new_buf_idx].is_pinned++;
 		buf_start = new_buf_idx;
 		buf_count++;
 
@@ -142,16 +141,17 @@ buffer_t * buf_get_page(int table_id, pagenum_t pagenum){
 		return &(buf[new_buf_idx]);
 	}
 	else{
-		printf("check5\n");
+		//printf("check5\n");
 		// applying LRU policy
 		buf_idx = buf_start;
 		buffer_t * out_buf, * prev_buf = NULL, * t_prev_buf = NULL;
 		int out_buf_idx;
-		printf("%d\n",buf_idx);
+		//printf("%d\n",buf_idx);
+		//print_buf();
 		while(buf_idx != -1){
-			printf("%d ",buf[buf_idx].pagenum);
+			//printf("%d ",buf[buf_idx].pagenum);
 			if(!buf[buf_idx].is_pinned){
-				printf("is pin\n");
+				//printf("is pin\n");
 				out_buf = &buf[buf_idx];
 				out_buf_idx = buf_idx;
 				prev_buf = t_prev_buf;
@@ -164,13 +164,13 @@ buffer_t * buf_get_page(int table_id, pagenum_t pagenum){
 		else
 			buf_start = out_buf->next_LRU;
 
-		printf("check6\n");
+		//printf("check6\n");
 		if(out_buf->is_dirty)
 			file_put_page(table_id, out_buf);
 
 		buf[out_buf_idx] = *new_buf;
 		buf[out_buf_idx].next_LRU = buf_start;
-		buf[out_buf_idx].is_pinned--;
+		//buf[out_buf_idx].is_pinned--;
 		buf_start = out_buf_idx;
 
 		//free(new_buf);
@@ -192,11 +192,13 @@ void buf_put_page(buffer_t * put_buf){
 	}
 	//printf("check1\n");
 	//printf("buf_start %d\nbuf_idx %d\n",buf_start,buf_idx);
+	//printf("%d %d\n", put_buf_idx, put_buf->next_LRU);
 	if(prev_buf != NULL)
 		prev_buf->next_LRU = put_buf->next_LRU;
 	else{
 		if(put_buf->next_LRU == -1){
-			buf[put_buf_idx].is_pinned --;
+			//printf("dfadsf %d\n", buf[put_buf_idx].is_pinned);
+			buf[put_buf_idx].is_pinned--;
 			buf[put_buf_idx].next_LRU = -1;
 			return;
 		}
@@ -247,10 +249,12 @@ buffer_t * make_node(int table_id){
 	buffer_t * header_buf = buf_get_page(table_id, HEADERPAGENUM);
 	file_write_page(header_buf->header_page.num_pages, new_page, table_id);
 	free(new_page);
+	//printf("%d\n",header_buf->header_page.num_pages);
 	buffer_t * new_buf = buf_get_page(table_id,header_buf->header_page.num_pages);
 	header_buf->header_page.num_pages++;
 	header_buf->is_dirty = 1;
 	buf_put_page(header_buf);
+	buf_put_page(new_buf);
 	return new_buf;
 }
 
