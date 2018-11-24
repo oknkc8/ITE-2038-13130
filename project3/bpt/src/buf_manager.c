@@ -43,8 +43,10 @@ int close_table(int table_id){
 	int i, j;
 	for(i = 0; i < table_fd_count; i++){
 		if(table_fd[i] == table_id){
-			for(j = i; j < table_fd_count - 1; j++)
+			for(j = i; j < table_fd_count - 1; j++){
 				table_fd[j] = table_fd[j+1];
+				strcpy(table_id_arr[j], table_id_arr[j+1]);
+			}
 			table_fd_count--;
 			break;
 		}
@@ -71,13 +73,18 @@ int init_db(int num_buf){
 }
 
 int shutdown_db(void){
-	int buf_idx = buf_start;
+	while(table_fd_count){
+		close_table(table_fd[0]);
+	}
+
+	int buf_idx = buf_start, i;
 	while(buf_idx != -1){
 		if(buf[buf_idx].is_dirty)
 			file_put_page(buf[buf_idx].table_id, &buf[buf_idx]);
 		buf_idx = buf[buf_idx].next_LRU;
 	}
 	free(buf);
+
 	return 0;
 }
 

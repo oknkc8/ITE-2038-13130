@@ -49,7 +49,7 @@ int main(int argc, char ** argv) {
 
 int main( int argc, char ** argv ) {
 
-    char * input_file = "default.db";
+    char input_file[100];
     int buf_cap = 10;
     char value[120];
     FILE * fp;
@@ -57,7 +57,7 @@ int main( int argc, char ** argv ) {
     char instruction;
     char license_part;
     int result;
-    int table_id;
+    int table_id = 0;
 
     if (argc > 1) {
         order = atoi(argv[1]);
@@ -82,7 +82,7 @@ int main( int argc, char ** argv ) {
     }
 
 
-    if (argc > 3) {
+/*    if (argc > 3) {
         input_file = argv[2];
         table_id = open_table(input_file);
         printf("\nOpen or Create file Successful!\n");
@@ -91,11 +91,22 @@ int main( int argc, char ** argv ) {
         table_id = open_table(input_file);
         printf("\nOpen or Create file Successful!\n");
     }
+    */
 
     printf("> ");
     while (scanf("%c", &instruction) != EOF) {
         switch (instruction) {
+        case 'o':
+            if(table_id) close_table(table_id);
+            scanf("%s", input_file);
+            table_id = open_table(input_file);
+            printf("\nOpen or Create DB file %s Successful!\n", input_file);
+            break;
         case 'd':
+            if(!table_id){
+                printf("Error!\nSelect the DB file!\n\n");
+                break;
+            }
             scanf("%" PRIu64, &input);
             result = delete(table_id, input);
             if(result){
@@ -106,6 +117,10 @@ int main( int argc, char ** argv ) {
             print_buf();
             break;
         case 'i':
+            if(!table_id){
+                printf("Error!\nSelect the DB file!\n\n");
+                break;
+            }
             scanf("%"PRId64 "%s", &input, value);
             result = insert(table_id, input, value);
             if(result){
@@ -116,6 +131,10 @@ int main( int argc, char ** argv ) {
             print_buf();
             break;
         case 'f':
+            if(!table_id){
+                printf("Error!\nSelect the DB file!\n\n");
+                break;
+            }
 			scanf("%" PRIu64, &input);
 			char * buf = find(table_id, input);
 			if(buf==NULL) printf("Not Found!\n");
@@ -126,6 +145,10 @@ int main( int argc, char ** argv ) {
             find_and_print(table_id, input, instruction == 'p');
             break;
         case 'l':
+            if(!table_id){
+                printf("Error!\nSelect the DB file!\n\n");
+                break;
+            }
             print_leaves(table_id);
             break;
         case 'q':
@@ -134,6 +157,10 @@ int main( int argc, char ** argv ) {
             return EXIT_SUCCESS;
             break;
         case 't':
+            if(!table_id){
+                printf("Error!\nSelect the DB file!\n\n");
+                break;
+            }
             print_tree(table_id);
             print_buf();
             break;

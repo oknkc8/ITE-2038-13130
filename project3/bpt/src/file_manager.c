@@ -23,7 +23,9 @@ int open_table(char* pathname){
 			printf("Failed to write header page (table_id : %d)\n", table_fd_count);
 			exit(EXIT_FAILURE);
 		}
-		table_fd[table_fd_count++] = db_fd;
+		table_fd[table_fd_count] = db_fd;
+		strcpy(table_id_arr[table_fd_count++], pathname);
+		printf("%d\n",db_fd);
 		return table_fd_count;
 	}
 
@@ -42,14 +44,17 @@ int open_table(char* pathname){
 
 		int i, ret_table_id;
 		for(i = 0; i < table_fd_count; i++){
-			if(db_fd == table_fd[i]){
+			if(!strcmp(table_id_arr[i], pathname)){
 				ret_table_id = i + 1;
+				printf("find fd\n");
 				break;
 			}
 		}
 		if(i == table_fd_count){
-			table_fd[table_fd_count++] = db_fd;
+			table_fd[table_fd_count] = db_fd;
+			strcpy(table_id_arr[table_fd_count++], pathname);
 			ret_table_id = table_fd_count;
+			printf("%d\n",db_fd);
 		}
 
 		//printf("dfasdf\n");

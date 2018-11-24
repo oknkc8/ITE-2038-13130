@@ -7,6 +7,7 @@
 #define ROOTPAGENUM 1
 
 int table_fd[10], table_fd_count;
+char table_id_arr[10][100];
 
 //Open existing data file or create one if not existed
 int open_table(char* pathname);
