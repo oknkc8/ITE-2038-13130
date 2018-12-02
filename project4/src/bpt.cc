@@ -405,7 +405,7 @@ void find_and_print( int table_id, int64_t key, bool is_p ) {
  * Returns the leaf containing the given key.
  */
 buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
-    printf("\nfind_leaf\n%d\n", table_id);
+    //printf("\nfind_leaf\n%d\n", table_id);
     int i = 0;
 
     //print_buf();
@@ -413,7 +413,7 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
     //printf("check1\n");
     //printf("%d\n", header_buf->header_page.root_page_offset_num);
     //print_buf();
-    printf("find leaf check1\n%d\n",header_buf->header_page.root_page_offset_num);
+    //printf("find leaf check1\n%d\n",header_buf->header_page.root_page_offset_num);
     if(header_buf->header_page.root_page_offset_num == 0){
         //printf("check4\n");
         if (verbose) 
@@ -421,7 +421,7 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
         buf_put_page(header_buf);
         return NULL;
     }
-    printf("find leaf check2\n");
+    //printf("find leaf check2\n");
     //printf("check2\n");
     buf_put_page(header_buf);
     //printf("check3\n");
@@ -430,7 +430,7 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
     *index = ROOTPAGENUM;
 	//file_read_page(*index, c);
     buffer_t * c = buf_get_page(table_id, *index);
-    printf("check4\n");
+    //printf("check4\n");
     while (!c->page.is_leaf) {
         if (verbose) {
             printf("[");
@@ -456,7 +456,7 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
         //file_read_page(*index, c);
         c = buf_get_page(table_id, *index);
     }
-    printf("check5\n");
+    //printf("check5\n");
     
 	if (verbose) {
         printf("Leaf [");

@@ -50,23 +50,23 @@ vector<join_table> get_all_table(){
         pagenum_t tmp;
         int64_t p = INF;
         ret[i].table_id = i+1, ret[i].num_col = get_num_col(i+1);
-        printf("num_col : %d\n",ret[i].num_col);
-        printf("check1\n");
-        print_buf();
+        //printf("num_col : %d\n",ret[i].num_col);
+        //printf("check1\n");
+        //print_buf();
         buffer_t * now = find_leaf(i+1, p, &tmp);
-        printf("check2\n");
+        //printf("check2\n");
         while(1){
-            printf("page num keys : %d\n", now->page.num_keys);
+            //printf("page num keys : %d\n", now->page.num_keys);
             for(int j = 0; j < now->page.num_keys; j++){
-                printf("check3\n");
+                //printf("check3\n");
                 vector<int64_t> col;
                 col.push_back(now->page.records[j].key);
-                printf("%lld ", now->page.records[j].key);
+                //printf("%lld ", now->page.records[j].key);
                 for(int k = 0; k < ret[i].num_col - 1; k++){
                     col.push_back(now->page.records[j].values[k]);
-                    printf("%lld ", now->page.records[j].values[k]);
+                    //printf("%lld ", now->page.records[j].values[k]);
                 }
-                printf("\n");
+                //printf("\n");
                 ret[i].table.push_back(col);
             }
             if(now->page.pointer_num == 0) break;
@@ -128,7 +128,7 @@ int64_t join(const char* query) {
 
         // Case 1
         if(table_check[right.table_id]){
-            printf("checked\n");
+            //printf("checked\n");
             for(int j = 0; j < min(result[left.table_id].table.size(), result[right.table_id].table.size()); j++){
                 if(result[left.table_id].table[j][left.column_id] == result[right.table_id].table[j][right.column_id]){
                     for(int k = 0; k < result.size(); k++){
@@ -144,34 +144,34 @@ int64_t join(const char* query) {
         }
         // Case 2
         else{
-            printf("not check\n");
+            //printf("not check\n");
             table_check[right.table_id] = 1;
             result[right.table_id].num_col = tables[right.table_id].num_col;
             //printf("%d\n", tables[right.table_id].table.size());
             for(int j = 0; j < tables[right.table_id].table.size(); j++){
                 int y_key = tables[right.table_id].table[j][right.column_id];
-                printf("%d ", y_key);
+                //printf("%d ", y_key);
                 if(t.find(y_key) != t.end()){
-                    printf("%d \n", t[y_key]);
+                    //printf("%d \n", t[y_key]);
                     for(int k = 0; k < result.size(); k++){
                         vector<int64_t> temp_col;
                         if(k == right.table_id){
-                            printf("same\n");
+                            //printf("same\n");
                             for(int l = 0; l < tables[right.table_id].num_col; l++){
                                 temp_col.push_back(tables[right.table_id].table[j][l]);
-                                printf("check1\n");
+                                //printf("check1\n");
                             }
                         }
                         else{
-                            printf("not same\n");
+                            //printf("not same\n");
                             if(result[k].table.size() < j) continue;
                             for(int l = 0; l < result[k].num_col; l++){
                                 temp_col.push_back(result[k].table[t[y_key]][l]);
-                                printf("check2\n");
+                                //printf("check2\n");
                             }
                         }
                         temp[k].table.push_back(temp_col);
-                        printf("check3\n");
+                        //printf("check3\n");
                     }
                 }
             }
@@ -182,13 +182,14 @@ int64_t join(const char* query) {
         }
         result.clear();
         result = temp;
-        printf("check4\n");
+        //printf("check4\n");
     }
 
+/*
     // Print the result
-    printf("%d\n", result.size());
+    //printf("%d\n", result.size());
     for(int i = 0; i < result.size(); i++){
-        printf("%d\n", result[i].num_col);
+        //printf("%d\n", result[i].num_col);
         for(int j = 0; j < result[i].num_col; j++){
             printf("%d %d  ", i+1, j+1);
         }
@@ -196,16 +197,17 @@ int64_t join(const char* query) {
     printf("\n");
     for(int i = 0; i < result.size() * result[i].num_col * 4; i++) printf("-");
     printf("\n");
+*/
     for(int j = 0; j < result[0].table.size(); j++){
         for(int i = 0; i < result.size(); i++){
             ret += result[i].table[j][0];
-            for(int k = 0; k < result[i].num_col; k++){
-                printf("%3lld ", (long long)result[i].table[j][k]);
-            }
+            //for(int k = 0; k < result[i].num_col; k++){
+            //    printf("%3lld ", (long long)result[i].table[j][k]);
+            //}
         }
-        printf("\n");
+  //      printf("\n");
     }
-    printf("\n");
+//    printf("\n");
 
     return ret;
 }
