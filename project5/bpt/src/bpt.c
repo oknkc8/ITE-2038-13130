@@ -384,7 +384,7 @@ void print_tree( int table_id ) {
  */
 void find_and_print( int table_id, int64_t key, bool is_p ) {
     verbose = is_p;
-    int64_t * r = find(table_id, key);
+    char * r = find(table_id, key);
     pagenum_t pagenum;
     buffer_t * c = find_leaf(table_id, key, &pagenum);
 
@@ -405,7 +405,7 @@ void find_and_print( int table_id, int64_t key, bool is_p ) {
  * Returns the leaf containing the given key.
  */
 buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
-    //printf("\nfind_leaf\n%d\n", table_id);
+    //printf("\nfind_leaf\n");
     int i = 0;
 
     //print_buf();
@@ -413,7 +413,6 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
     //printf("check1\n");
     //printf("%d\n", header_buf->header_page.root_page_offset_num);
     //print_buf();
-    //printf("find leaf check1\n%d\n",header_buf->header_page.root_page_offset_num);
     if(header_buf->header_page.root_page_offset_num == 0){
         //printf("check4\n");
         if (verbose) 
@@ -421,7 +420,6 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
         buf_put_page(header_buf);
         return NULL;
     }
-    //printf("find leaf check2\n");
     //printf("check2\n");
     buf_put_page(header_buf);
     //printf("check3\n");
@@ -473,8 +471,7 @@ buffer_t * find_leaf( int table_id, int64_t key, pagenum_t * index) {
 /* Finds and returns the record to which
  * a key refers.
  */
-//char * find( int table_id, int64_t key ) {
-int64_t * find( int table_id, int64_t key ) {
+char * find( int table_id, int64_t key ) {
     //printf("find function");
     int i = 0;
     pagenum_t pagenum;
@@ -499,10 +496,8 @@ int64_t * find( int table_id, int64_t key ) {
         return NULL;
     }
     else {
-        //char * ret = (char*)malloc(sizeof(char)*120);
-        int64_t * ret = (int64_t*)malloc(sizeof(int64_t)*15);
-        //strcpy(ret, c->page.records[i].value);
-        for(i = 0; i < 15; i++) ret[i] = c->page.records[i].values[i];
+        char * ret = (char*)malloc(sizeof(char)*120);
+        strcpy(ret, c->page.records[i].value);
         //buf_put_page(c);
         return ret;
     }
@@ -518,12 +513,13 @@ int cut( int length ) {
         return length/2 + 1;
 }
 
+
 // INSERTION
 
 /* Creates a new record to hold the value
  * to which a key refers.
  */
-record_t * make_record( int table_id, int64_t key, int64_t * values ) {
+record_t * make_record( int64_t key, char * value ) {
     record_t * new_record = (record_t*)malloc(sizeof(record_t));
     
     if (new_record == NULL) {
@@ -532,11 +528,7 @@ record_t * make_record( int table_id, int64_t key, int64_t * values ) {
     }
     else {
         new_record->key = key;
-        //strcpy(new_record->value, value);
-        int num_col = get_num_col(table_id);
-        for(int i = 0; i < num_col - 1; i++){
-            new_record->values[i] = values[i];
-        }
+        strcpy(new_record->value, value);
     }
 
     return new_record;
@@ -594,28 +586,18 @@ int get_left_index( buffer_t * parent, pagenum_t left_pagenum) {
  * Returns the altered leaf.
  */
 void insert_into_leaf( buffer_t * leaf, record_t * record ) {
-    //printf("insert into leaf\n");
     int i, insertion_point = 0;
     leaf = buf_get_page(leaf->table_id, leaf->pagenum);
-    int num_col = get_num_col(leaf->table_id);
-    //printf("%d\n", num_col);
 
     while(insertion_point < leaf->page.num_keys && leaf->page.records[insertion_point].key < record->key)
         insertion_point++;
 
     for (i = leaf->page.num_keys; i > insertion_point; i--) {
 		leaf->page.records[i].key = leaf->page.records[i - 1].key;
-        //strcpy(leaf->page.records[i].value, leaf->page.records[i - 1].value);
-        for(int j = 0; j < num_col - 1; j++){
-            leaf->page.records[i].values[j] = leaf->page.records[i - 1].values[j];
-        }
+        strcpy(leaf->page.records[i].value, leaf->page.records[i - 1].value);
     }
     leaf->page.records[insertion_point].key = record->key;
-    //strcpy(leaf->page.records[insertion_point].value, record->value);
-    for(i = 0; i < num_col - 1; i++){
-        leaf->page.records[insertion_point].values[i] = record->values[i];
-        //printf("%lld ", record->values[i]);
-    }
+    strcpy(leaf->page.records[insertion_point].value, record->value);
     leaf->page.num_keys++;
     leaf->is_dirty = 1;
 
@@ -636,7 +618,6 @@ void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagen
     buffer_t * new_leaf;
     pagenum_t new_leaf_pagenum = header_buf->header_page.num_pages;
     leaf = buf_get_page(leaf->table_id, leaf->pagenum);
-    int num_col = get_num_col(leaf->table_id);
     //printf("dfdsf\n");
     //print_buf();
 
@@ -681,35 +662,23 @@ void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagen
     for (i = 0, j = 0; i < leaf->page.num_keys; i++, j++) {
         if (j == insertion_index) j++;
         temp_page->records[j].key = leaf->page.records[i].key;
-        //strcpy(temp_page->records[j].value, leaf->page.records[i].value);
-        for(int k = 0; k < num_col - 1; k++){
-            temp_page->records[j].values[k] = leaf->page.records[i].values[k];
-        }
+        strcpy(temp_page->records[j].value, leaf->page.records[i].value);
     }
     temp_page->records[insertion_index].key = record->key;
-    //strcpy(temp_page->records[insertion_index].value, record->value);
-    for(i = 0; i < num_col - 1; i++){
-        temp_page->records[insertion_index].values[i] = record->values[i];
-    }
+    strcpy(temp_page->records[insertion_index].value, record->value);
     leaf->page.num_keys = 0;
 
     split = cut(order - 1);
 
     for (i = 0; i < split; i++) {
         leaf->page.records[i].key = temp_page->records[i].key;
-        //strcpy(leaf->page.records[i].value, temp_page->records[i].value);
-        for(j = 0; j < num_col - 1; j++){
-            leaf->page.records[i].values[j] = temp_page->records[i].values[j];
-        }
+        strcpy(leaf->page.records[i].value, temp_page->records[i].value);
         leaf->page.num_keys++;
     }
 
     for (i = split, j = 0; i < order; i++, j++) {
         new_leaf->page.records[j].key = temp_page->records[i].key;
-        //strcpy(new_leaf->page.records[j].value, temp_page->records[i].value);
-        for(int k = 0; k < num_col - 1; k++){
-            new_leaf->page.records[j].values[k] = temp_page->records[i].values[k];
-        }
+        strcpy(new_leaf->page.records[j].value, temp_page->records[i].value);
         new_leaf->page.num_keys++;
     }
 
@@ -717,18 +686,15 @@ void insert_into_leaf_after_splitting( buffer_t * leaf, record_t * record, pagen
 
     new_leaf->page.pointer_num = leaf->page.pointer_num;
     leaf->page.pointer_num = new_leaf_pagenum;
-    //strcpy(new_leaf->page.records[order-1].value, leaf->page.records[order-1].value);
-    for(i = 0; i < num_col - 1; i++){
-        new_leaf->page.records[order-1].values[i] = leaf->page.records[order-1].values[i];
-    }
+    strcpy(new_leaf->page.records[order-1].value, leaf->page.records[order-1].value);
 
     for (i = leaf->page.num_keys; i < order - 1; i++) {
         leaf->page.records[i].key = 0;
-        memset(leaf->page.records[i].values, 0, sizeof(leaf->page.records[i].values));
+        memset(leaf->page.records[i].value, 0, sizeof(leaf->page.records[i].value));
     }
     for (i = new_leaf->page.num_keys; i < order - 1; i++) {
         new_leaf->page.records[i].key = 0;
-        memset(new_leaf->page.records[i].values, 0, sizeof(new_leaf->page.records[i].values));
+        memset(new_leaf->page.records[i].value, 0, sizeof(new_leaf->page.records[i].value));
     }
 
     new_leaf->page.parent_page_offset_num = leaf->page.parent_page_offset_num;
@@ -1070,11 +1036,7 @@ void start_new_tree( record_t * record, int table_id) {
 
     root_buf->page.parent_page_offset_num = 0;
     root_buf->page.records[0].key = record->key;
-    //strcpy(root_buf->page.records[0].value, record->value);
-    int num_col = get_num_col(table_id);
-    for(int i = 0; i < num_col - 1; i++){
-        root_buf->page.records[0].values[i] = record->values[i];
-    }
+    strcpy(root_buf->page.records[0].value, record->value);
     root_buf->page.num_keys++;
     buf_put_page(root_buf);
     //printf("end start new tree\n");
@@ -1088,7 +1050,7 @@ void start_new_tree( record_t * record, int table_id) {
  * however necessary to maintain the B+ tree
  * properties.
  */
-int insert ( int table_id, int64_t key, int64_t * values ) {
+int insert ( int table_id, int64_t key, char * value ) {
     //printf("\ninsert fuction\n");
     record_t * record;
     pagenum_t pagenum;
@@ -1097,7 +1059,7 @@ int insert ( int table_id, int64_t key, int64_t * values ) {
      * duplicates.
      */
     //print_buf();
-	int64_t * find_ret = find(table_id, key);
+	char * find_ret = find(table_id, key);
     //print_buf();
 
 	if(find_ret != NULL)
@@ -1107,7 +1069,7 @@ int insert ( int table_id, int64_t key, int64_t * values ) {
      * value.
      */
     //printf("not find!\n");
-    record = make_record(table_id, key, values);
+    record = make_record(key, value);
 
     /* Case: the tree does not exist yet.
      * Start a new tree.
@@ -1213,7 +1175,7 @@ pagenum_t get_neighbor_index( buffer_t * n, pagenum_t n_pagenum, bool * is_most_
 
 void remove_entry_from_node( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
     
-    int i, num_col = get_num_col(n->table_id);
+    int i;
     n = buf_get_page(n->table_id, n->pagenum);
 
     // Remove the key and shift other keys accordingly.
@@ -1223,10 +1185,7 @@ void remove_entry_from_node( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
             i++;
         for(++i; i < n->page.num_keys; i++){
             n->page.records[i - 1].key = n->page.records[i].key;
-            //strcpy(n->page.records[i - 1].value, n->page.records[i].value);
-            for(int j = 0; j < num_col -1; j++){
-                n->page.records[i - 1].values[j] = n->page.records[i].values[j];
-            }
+            strcpy(n->page.records[i - 1].value, n->page.records[i].value);
         }
     }
     else{
@@ -1250,7 +1209,7 @@ void remove_entry_from_node( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
     if (n->page.is_leaf){
         for (i = n->page.num_keys; i < order; i++){
             n->page.records[i].key = 0;
-            memset(n->page.records[i].values, 0, sizeof(n->page.records[i].values));
+            memset(n->page.records[i].value, 0, sizeof(n->page.records[i].value));
         }
     }
     else{
@@ -1445,13 +1404,9 @@ void coalesce_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor, pag
      */
 
     else {
-        int num_col = get_num_col(neighbor->table_id);
         for (i = neighbor_insertion_index, j = 0; j < n->page.num_keys; i++, j++) {
             neighbor->page.records[i].key = n->page.records[j].key;
-            //strcpy(neighbor->page.records[i].value, n->page.records[j].value);
-            for(int k = 0; k < num_col - 1; k++){
-                neighbor->page.records[i].values[k] = n->page.records[j].values[k];
-            }
+            strcpy(neighbor->page.records[i].value, n->page.records[j].value);
             neighbor->page.num_keys++;
         }
         neighbor->page.pointer_num = n->page.pointer_num;
@@ -1485,7 +1440,7 @@ void coalesce_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor, pag
  */
 void redistribute_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor, pagenum_t neighbor_pagenum, buffer_t * parent, pagenum_t parent_pagenum, bool is_most_left, int entries_index) {
 
-    int i, num_col = get_num_col(n->table_id);
+    int i;
     n = buf_get_page(n->table_id, n->pagenum);
     neighbor = buf_get_page(neighbor->table_id, neighbor->pagenum);
     parent = buf_get_page(parent->table_id, parent->pagenum);
@@ -1520,19 +1475,13 @@ void redistribute_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor,
         else{
             for(i = n->page.num_keys; i > 0; i--){
                 n->page.records[i].key = n->page.entries[i - 1].key;
-                //strcpy(n->page.records[i].value, n->page.records[i - 1].value);
-                for(int j = 0; j < num_col - 1; j++){
-                    n->page.records[i].values[j] = n->page.records[i - 1].values[j];
-                }
+                strcpy(n->page.records[i].value, n->page.records[i - 1].value);
             }
             n->page.records[0].key = neighbor->page.records[neighbor->page.num_keys - 1].key;
-            //strcpy(n->page.records[0].value, neighbor->page.records[neighbor->page.num_keys - 1].value);
-            for(i = 0; i < num_col - 1; i++){
-                n->page.records[0].values[i] = neighbor->page.records[neighbor->page.num_keys - 1].values[i];
-            }
+            strcpy(n->page.records[0].value, neighbor->page.records[neighbor->page.num_keys - 1].value);
             parent->page.entries[entries_index].key = n->page.records[0].key;
             neighbor->page.records[neighbor->page.num_keys - 1].key = 0;
-            memset(neighbor->page.records[neighbor->page.num_keys - 1].values, 0, sizeof(neighbor->page.records[neighbor->page.num_keys - 1].values));
+            memset(neighbor->page.records[neighbor->page.num_keys - 1].value, 0, sizeof(neighbor->page.records[neighbor->page.num_keys - 1].value));
         }
     }
 
@@ -1565,20 +1514,14 @@ void redistribute_nodes( buffer_t * n, pagenum_t n_pagenum, buffer_t * neighbor,
         }
         else{
             n->page.records[n->page.num_keys].key = neighbor->page.records[0].key;
-            //strcpy(n->page.records[n->page.num_keys].value, neighbor->page.records[0].value);
-            for(i = 0; i < num_col - 1; i++){
-                n->page.records[n->page.num_keys].values[i] = neighbor->page.records[0].values[i];
-            }
+            strcpy(n->page.records[n->page.num_keys].value, neighbor->page.records[0].value);
             for(i = 0; i < neighbor->page.num_keys - 1; i++){
                 neighbor->page.records[i].key = neighbor->page.records[i + 1].key;
-                //strcpy(neighbor->page.records[i].value, neighbor->page.records[i + 1].value);
-                for(int j = 0; j < num_col - 1; j++){
-                    neighbor->page.records[i].values[j] = neighbor->page.records[i + 1].values[j];
-                }
+                strcpy(neighbor->page.records[i].value, neighbor->page.records[i + 1].value);
             }
             parent->page.entries[entries_index].key = neighbor->page.records[0].key;
             neighbor->page.records[neighbor->page.num_keys - 1].key = 0;
-            memset(neighbor->page.records[neighbor->page.num_keys - 1].values, 0, sizeof(neighbor->page.records[neighbor->page.num_keys - 1].values));
+            memset(neighbor->page.records[neighbor->page.num_keys - 1].value, 0, sizeof(neighbor->page.records[neighbor->page.num_keys - 1].value));
         }       
     }
 
@@ -1684,11 +1627,10 @@ void delete_entry( buffer_t * n, pagenum_t n_pagenum, int64_t key ) {
 
 /* Master deletion function.
  */
-//int delete(int table_id, int64_t key) {
-int erase(int table_id, int64_t key){
+int delete(int table_id, int64_t key) {
     //printf("\ndelete\n");
     buffer_t * key_leaf_page;
-    int64_t * key_record_value;
+    char * key_record_value;
     pagenum_t key_leaf_page_pagenum;
 
     key_record_value = find(table_id, key);
